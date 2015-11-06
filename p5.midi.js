@@ -1,16 +1,21 @@
 /**
- *  NOTE: you may need to restart browser for midi to work
+ *  NOTE: you may need to restart your browser
+ *  if midi input/output devices were not connected
+ *  when you opened the browser session.
+ *
+ *  p5.midi.event 
  *  
  *  methods:
  *
- *  MIDI.init
+ *  p5.midi.init()
  *
- *  // callback
- *  MIDI.onInput() {
- *    MIDI.event
+ *  p5.midi.onInput(e) {
+ *    // do something with
+ *    // p5.midi.event
+ *    // which is the same thing as "e"
  *  }
  *  
- *  MIDI.send()
+ *  p5.midi.send(channel, val)
  *  
  */
 
@@ -22,7 +27,12 @@
     outputArray: [],
     inputArray: [],
 
-    // the current midi event
+    /**
+     *  the p5.midi.event holds the most recent midi input event.
+     *  
+     *  
+     *  @property A Uint8Array containing the MIDI data bytes of a single MIDI message
+     */
     event: undefined,
 
     /**
@@ -109,14 +119,26 @@
      */
     MIDIMessageEventHandler: function(event) {
       ___MIDI.event = event;
-      ___MIDI.onInput(this.event);
+      ___MIDI.onInput(event);
     },
 
-    // to be overwritten by the user
-    // [0] - channel
-    // [1] - note
-    // [2] - velocity
-    onInput: function() {
+
+    /**
+     *  Callback from midi input event.
+     *  
+     *  Should be overwritten by the user, similar to mouseClicked(), like this:
+     *  p5.midi.onInput(){
+     *    var note = p5.midi.event[1];
+     *    var velocity = p5.midi.event[2];
+     *    
+     *    // do something with note and velocity
+     *  }
+     *
+     *  @method  onInput
+     *  @param  {Array} event Event will be passed in automatically
+     *                        or can be referenced as p5.midi.event
+     */
+    onInput: function(event) {
       console.log('input: ', this.event);
     },
 
@@ -127,7 +149,7 @@
      *    MIDI.send('attack', 60, 127) --> triggers attack on middle C
      *    MIDI.send('release', 60, 0) --> triggers release of middle C
      *  
-     *  @param  {String} message  'attack' or 'release'
+     *  @param  {String} message  'attack', 'release' or # betw 0 to 127
      *  @param  {Number} note     0 to 127
      *  @param  {Number} velocity 0 to 127
      */
@@ -155,17 +177,19 @@
 
       msg[2] = velocity;
 
-      this.outputArray.forEach(function(o) {
-        console.log(o.name);
-        o.send(msg);
+      // send the message to all connected outputs
+      this.outputArray.forEach(function(output) {
+        output.send(msg);
       });
 
      }
   }
 
+  // initialize midi and create p5 object if one doesn't exist on the page
   if (!window.p5) {
     p5 = {};
   }
-  p5.MIDI = ___MIDI;
-  window.addEventListener('load', p5.MIDI.init() );
+  p5.midi = ___MIDI;
+  window.addEventListener('load', p5.midi.init() );
+
 })();
